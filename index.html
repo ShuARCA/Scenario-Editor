@@ -36,22 +36,22 @@
       padding: 10px;
       overflow-y: auto;
     }
-    #outline li {
-      margin: 4px 0;
-      font-size: 0.9em;
-    }
-    #outline a {
-      text-decoration: none;
-      color: #007acc;
-    }
-    /* Image styling for resizing and containment */
-    #editor img {
-      max-width: 100%;
-      height: auto;
+    #outline li { margin: 4px 0; font-size: 0.9em; }
+    #outline a { text-decoration: none; color: #007acc; }
+    /* Wrapper for resizable images */
+    .resizable-container {
       display: block;
-      margin: 1em 0;
       resize: both;
       overflow: auto;
+      max-width: 100%;
+      margin: 1em 0;
+      border: 1px dashed #ccc;
+      position: relative;
+    }
+    .resizable-container img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
   </style>
 </head>
@@ -65,7 +65,6 @@
     <input type="file" accept=".html" onchange="loadFile(event)">
     <button onclick="save()">保存</button>
   </div>
-
   <div id="container">
     <div id="sidebar">
       <h3>アウトライン</h3>
@@ -76,7 +75,6 @@
       <h1>ここに文章を入力してください...</h1>
     </div>
   </div>
-
   <script>
     let currentFilename = "document.html";
 
@@ -128,9 +126,12 @@
         if (file.type.startsWith('image/')) {
           const reader = new FileReader();
           reader.onload = e => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'resizable-container';
             const img = document.createElement('img');
             img.src = e.target.result;
-            insertNodeAtCursor(img);
+            wrapper.appendChild(img);
+            insertNodeAtCursor(wrapper);
           };
           reader.readAsDataURL(file);
         }
@@ -149,7 +150,7 @@
       sel.addRange(range);
     }
 
-    // 初期化
+    // Initialize outline
     generateOutline();
   </script>
 </body>
