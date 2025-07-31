@@ -72,7 +72,41 @@ img.resizable:active {
   max-width: 800px;
   margin: 0 auto;
 }
+
+img-wrapper {
+  display: inline-block;
+  position: relative;
+  margin: 1em auto;
+  max-width: 100%;
+}
+
+img-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+img-wrapper.resizable {
+  resize: both;
+  overflow: auto;
+  border: 1px dashed #ccc;
+  pointer-events: auto;
+}
+
+.editor-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+#editor img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+}
 </style>
+
 
 </head>
 
@@ -84,7 +118,41 @@ img.resizable:active {
     display: block;
     margin: 1em auto;
   }
+
+img-wrapper {
+  display: inline-block;
+  position: relative;
+  margin: 1em auto;
+  max-width: 100%;
+}
+
+img-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+img-wrapper.resizable {
+  resize: both;
+  overflow: auto;
+  border: 1px dashed #ccc;
+  pointer-events: auto;
+}
+
+.editor-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+#editor img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+}
 </style>
+
 
   <div id="toolbar">
     <button onclick="format('bold')">太字</button>
@@ -125,7 +193,41 @@ img.resizable:active {
     display: block;
     margin: 1em auto;
   }
+
+img-wrapper {
+  display: inline-block;
+  position: relative;
+  margin: 1em auto;
+  max-width: 100%;
+}
+
+img-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+
+img-wrapper.resizable {
+  resize: both;
+  overflow: auto;
+  border: 1px dashed #ccc;
+  pointer-events: auto;
+}
+
+.editor-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+#editor img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+  vertical-align: middle;
+}
 </style>
+
 ${content}</body></html>`;
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
@@ -192,7 +294,21 @@ ${content}</body></html>`;
     }
 
     
+
 function makeDraggable(img) {
+  const wrapper = document.createElement('div');
+  wrapper.classList.add('resizable');
+  wrapper.contentEditable = false;
+  wrapper.style.display = 'inline-block';
+  wrapper.style.position = 'relative';
+  wrapper.style.resize = 'both';
+  wrapper.style.overflow = 'auto';
+  wrapper.style.maxWidth = '100%';
+  wrapper.style.margin = '1em auto';
+  img.parentNode.insertBefore(wrapper, img);
+  wrapper.appendChild(img);
+}
+
   img.classList.add('resizable');
 
       let isDragging = false;
