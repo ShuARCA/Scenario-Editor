@@ -15,8 +15,35 @@
   </script>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 0; }
-    #toolbar { padding: 8px; background: #f0f0f0; border-bottom: 1px solid #ccc; }
-    #editor { padding: 10px; min-height: 80vh; }
+    #toolbar {
+      padding: 8px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+    }
+    #container {
+      display: flex;
+      height: calc(100vh - 50px);
+    }
+    #sidebar {
+      width: 200px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border-right: 1px solid #ccc;
+      padding: 10px;
+    }
+    #editor {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+    #outline li {
+      margin: 4px 0;
+      font-size: 0.9em;
+    }
+    #outline a {
+      text-decoration: none;
+      color: #007acc;
+    }
   </style>
 </head>
 <body>
@@ -30,8 +57,15 @@
     <button onclick="save()">保存</button>
   </div>
 
-  <div id="editor" contenteditable="true">
-    ここに文章を入力してください...
+  <div id="container">
+    <div id="sidebar">
+      <h3>アウトライン</h3>
+      <ul id="outline"></ul>
+      <button onclick="generateOutline()">再読込</button>
+    </div>
+    <div id="editor" contenteditable="true">
+      <h1>ここに文章を入力してください...</h1>
+    </div>
   </div>
 
   <script>
@@ -62,9 +96,26 @@
         temp.innerHTML = e.target.result;
         const body = temp.querySelector("body");
         document.getElementById('editor').innerHTML = body ? body.innerHTML : e.target.result;
+        generateOutline();
       };
       reader.readAsText(file);
     }
+
+    function generateOutline() {
+      const outline = document.getElementById('outline');
+      outline.innerHTML = "";
+      const headings = document.querySelectorAll('#editor h1, #editor h2, #editor h3');
+
+      headings.forEach((h, i) => {
+        if (!h.id) h.id = 'heading-' + i;
+        const li = document.createElement('li');
+        li.innerHTML = `<a href="#${h.id}">${h.innerText}</a>`;
+        outline.appendChild(li);
+      });
+    }
+
+    const observer = new MutationObserver(generateOutline);
+    observer.observe(document.getElementById('editor'), { childList: true, subtree: true });
   </script>
 </body>
 </html>
