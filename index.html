@@ -53,6 +53,8 @@
     <button onclick="format('underline')">下線</button>
     <button onclick="format('insertUnorderedList')">箇条書き</button>
     <button onclick="format('insertOrderedList')">番号付きリスト</button>
+    <button onclick="insertImage()">画像挿入</button>
+    <input type="file" id="imageInput" style="display:none" accept="image/*" onchange="handleImageUpload(event)">
     <input type="file" accept=".html" onchange="loadFile(event)">
     <button onclick="save()">保存</button>
   </div>
@@ -113,6 +115,53 @@
         outline.appendChild(li);
       });
     }
+
+    function insertImage() {
+  document.getElementById('imageInput').click();
+}
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.createElement('img');
+    img.src = e.target.result;
+    img.style.maxWidth = "100%";
+    img.style.resize = "both";
+    img.style.overflow = "auto";
+    img.style.cursor = "move";
+    img.setAttribute("draggable", "true");
+    makeImageDraggable(img);
+    const range = window.getSelection().getRangeAt(0);
+    range.insertNode(img);
+  };
+  reader.readAsDataURL(file);
+}
+
+function makeImageDraggable(img) {
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  img.addEventListener("mousedown", function(e) {
+    isDragging = true;
+    offsetX = e.offsetX;
+    offsetY = e.offsetY;
+    img.style.position = "absolute";
+    img.style.zIndex = 1000;
+  });
+
+  document.addEventListener("mousemove", function(e) {
+    if (isDragging) {
+      img.style.left = (e.pageX - offsetX) + "px";
+      img.style.top = (e.pageY - offsetY) + "px";
+    }
+  });
+
+  document.addEventListener("mouseup", function() {
+    isDragging = false;
+  });
+    
 
     const observer = new MutationObserver(generateOutline);
     observer.observe(document.getElementById('editor'), { childList: true, subtree: true });
