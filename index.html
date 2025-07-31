@@ -35,6 +35,7 @@
       flex: 1;
       padding: 10px;
       overflow-y: auto;
+      position: relative;
     }
     #outline li {
       margin: 4px 0;
@@ -43,6 +44,15 @@
     #outline a {
       text-decoration: none;
       color: #007acc;
+    }
+    img {
+      max-width: 100%;
+      resize: both;
+      overflow: auto;
+      display: inline-block;
+      cursor: move;
+      user-select: none;
+      position: relative;
     }
   </style>
 </head>
@@ -63,7 +73,7 @@
       <ul id="outline"></ul>
       <button onclick="generateOutline()">再読込</button>
     </div>
-    <div id="editor" contenteditable="true">
+    <div id="editor" contenteditable="true" ondrop="handleDrop(event)" ondragover="event.preventDefault()">
       <h1>ここに文章を入力してください...</h1>
     </div>
   </div>
@@ -89,14 +99,14 @@
       const file = event.target.files[0];
       if (!file) return;
       currentFilename = file.name;
-
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = e => {
         const temp = document.createElement("div");
         temp.innerHTML = e.target.result;
         const body = temp.querySelector("body");
         document.getElementById('editor').innerHTML = body ? body.innerHTML : e.target.result;
         generateOutline();
+        attachImageHandlers();
       };
       reader.readAsText(file);
     }
@@ -105,17 +115,83 @@
       const outline = document.getElementById('outline');
       outline.innerHTML = "";
       const headings = document.querySelectorAll('#editor h1, #editor h2, #editor h3');
-
       headings.forEach((h, i) => {
         if (!h.id) h.id = 'heading-' + i;
         const li = document.createElement('li');
         li.innerHTML = `<a href="#${h.id}">${h.innerText}</a>`;
         outline.appendChild(li);
       });
+      attachImageHandlers();
     }
 
-    const observer = new MutationObserver(generateOutline);
-    observer.observe(document.getElementById('editor'), { childList: true, subtree: true });
+    function handleDrop(event) {
+      event.preventDefault();
+      const files = event.dataTransfer.files;
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            insertNodeAtCursor(img);
+            makeDraggable(img);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+
+    function insertNodeAtCursor(node) {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return;
+      const range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(node);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    function makeDraggable(img) {
+      let isDragging = false;
+      let startX, startY, origX = 0, origY = 0;
+      img.addEventListener('mousedown', e => {
+        e.preventDefault();
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const style = window.getComputedStyle(img);
+        origX = parseInt(style.left) || 0;
+        origY = parseInt(style.top) || 0;
+        img.style.transition = 'none';
+      });
+      document.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        img.style.transform = `translate(${dx}px, ${dy}px)`;
+      });
+      document.addEventListener('mouseup', e => {
+        if (!isDragging) return;
+        isDragging = false;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        img.style.transform = 'none';
+        img.style.left = (origX + dx) + 'px';
+        img.style.top = (origY + dy) + 'px';
+        img.style.transition = '';
+      });
+    }
+
+    function attachImageHandlers() {
+      const imgs = document.querySelectorAll('#editor img');
+      imgs.forEach(img => {
+        makeDraggable(img);
+      });
+    }
+
+    // 初期化
+    generateOutline();
   </script>
 </body>
 </html>
