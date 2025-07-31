@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>リッチテキストエディタ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log('Service Worker registered!'));
+    }
+  </script>
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    #toolbar { padding: 8px; background: #f0f0f0; border-bottom: 1px solid #ccc; }
+    #editor { padding: 10px; min-height: 80vh; }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button onclick="format('bold')">太字</button>
+    <button onclick="format('italic')">斜体</button>
+    <button onclick="format('underline')">下線</button>
+    <button onclick="format('insertUnorderedList')">箇条書き</button>
+    <button onclick="format('insertOrderedList')">番号付きリスト</button>
+    <button onclick="save()">保存</button>
+  </div>
+
+  <div id="editor" contenteditable="true">
+    ここに文章を入力してください...
+  </div>
+
+  <script>
+    function format(command, value = null) {
+      document.execCommand(command, false, value);
+    }
+
+    function save() {
+      const content = document.getElementById('editor').innerHTML;
+      const html = `<!DOCTYPE html><html><body>${content}</body></html>`;
+      const blob = new Blob([html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'document.html';
+      a.click();
+    }
+  </script>
+</body>
+</html>
