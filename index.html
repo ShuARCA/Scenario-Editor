@@ -54,9 +54,38 @@
       user-select: none;
       position: relative;
     }
-  </style>
+  
+img.resizable {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1em auto;
+  resize: both;
+  overflow: auto;
+}
+
+img.resizable:active {
+  outline: 2px dashed #aaa;
+}
+
+.editor-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+</style>
+
 </head>
+
 <body>
+<style>
+  #editor img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em auto;
+  }
+</style>
+
   <div id="toolbar">
     <button onclick="format('bold')">太字</button>
     <button onclick="format('italic')">斜体</button>
@@ -87,7 +116,17 @@
 
     function save() {
       const content = document.getElementById('editor').innerHTML;
-      const html = `<!DOCTYPE html><html><body>${content}</body></html>`;
+      const html = `<!DOCTYPE html><html>
+<body>
+<style>
+  #editor img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em auto;
+  }
+</style>
+${content}</body></html>`;
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -152,7 +191,10 @@
       sel.addRange(range);
     }
 
-    function makeDraggable(img) {
+    
+function makeDraggable(img) {
+  img.classList.add('resizable');
+
       let isDragging = false;
       let startX, startY, origX = 0, origY = 0;
       img.addEventListener('mousedown', e => {
