@@ -15,44 +15,16 @@
   </script>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 0; }
-    #toolbar {
-      padding: 8px;
-      background: #f0f0f0;
-      border-bottom: 1px solid #ccc;
-    }
-    #container {
-      display: flex;
-      height: calc(100vh - 50px);
-    }
-    #sidebar {
-      width: 200px;
-      overflow-y: auto;
-      background: #f9f9f9;
-      border-right: 1px solid #ccc;
-      padding: 10px;
-    }
-    #editor {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-    }
-    #outline li { margin: 4px 0; font-size: 0.9em; }
-    #outline a { text-decoration: none; color: #007acc; }
-    /* Wrapper for resizable images */
-    .resizable-container {
-      display: block;
-      resize: both;
-      overflow: auto;
-      max-width: 100%;
-      margin: 1em 0;
-      border: 1px dashed #ccc;
-      position: relative;
-    }
-    .resizable-container img {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
+    #toolbar { padding: 8px; background: #f0f0f0; border-bottom: 1px solid #ccc; }
+    #container { display: flex; height: calc(100vh - 50px); }
+    #sidebar { width: 200px; overflow-y: auto; background: #f9f9f9; border-right: 1px solid #ccc; padding: 10px; }
+    #editor { flex: 1; padding: 10px; overflow-y: auto; position: relative; }
+    #outline { list-style: none; padding: 0; margin: 0; }
+    #outline li { margin: 4px 0; }
+    #outline li.active > a { background: #ddd; }
+    #outline a { text-decoration: none; color: #007acc; display: block; padding: 2px 4px; border-radius: 4px; }
+    .resizable-container { display: block; resize: both; overflow: auto; max-width: 100%; margin: 1em 0; border: 1px dashed #ccc; position: relative; }
+    .resizable-container img { width: 100%; height: auto; display: block; }
   </style>
 </head>
 <body>
@@ -77,36 +49,26 @@
   </div>
   <script>
     let currentFilename = "document.html";
-
-    function format(command, value = null) {
-      document.execCommand(command, false, value);
-    }
-
+    function format(command, value = null) { document.execCommand(command, false, value); }
     function save() {
       const content = document.getElementById('editor').innerHTML;
       const html = `<!DOCTYPE html><html><body>${content}</body></html>`;
       const blob = new Blob([html], { type: 'text/html' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = currentFilename;
-      a.click();
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = currentFilename; a.click();
     }
-
     function loadFile(event) {
       const file = event.target.files[0];
       if (!file) return;
       currentFilename = file.name;
       const reader = new FileReader();
       reader.onload = e => {
-        const temp = document.createElement("div");
-        temp.innerHTML = e.target.result;
+        const temp = document.createElement("div"); temp.innerHTML = e.target.result;
         const body = temp.querySelector("body");
         document.getElementById('editor').innerHTML = body ? body.innerHTML : e.target.result;
         generateOutline();
       };
       reader.readAsText(file);
     }
-
     function generateOutline() {
       const outline = document.getElementById('outline');
       outline.innerHTML = "";
@@ -114,11 +76,14 @@
       headings.forEach((h, i) => {
         if (!h.id) h.id = 'heading-' + i;
         const li = document.createElement('li');
+        const level = parseInt(h.tagName.substring(1));
+        li.style.paddingLeft = (level - 1) * 10 + 'px';
+        li.dataset.target = h.id;
         li.innerHTML = `<a href="#${h.id}">${h.innerText}</a>`;
         outline.appendChild(li);
       });
+      updateActiveOutline();
     }
-
     function handleDrop(event) {
       event.preventDefault();
       const files = event.dataTransfer.files;
@@ -138,19 +103,30 @@
       }
       generateOutline();
     }
-
     function insertNodeAtCursor(node) {
       const sel = window.getSelection();
       if (!sel.rangeCount) return;
       const range = sel.getRangeAt(0);
-      range.deleteContents();
-      range.insertNode(node);
-      range.collapse(false);
-      sel.removeAllRanges();
-      sel.addRange(range);
+      range.deleteContents(); range.insertNode(node); range.collapse(false);
+      sel.removeAllRanges(); sel.addRange(range);
     }
-
-    // Initialize outline
+    function updateActiveOutline() {
+      const sel = window.getSelection();
+      if (!sel.anchorNode) return;
+      let node = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
+      let heading = node.closest('h1,h2,h3');
+      if (!heading) {
+        const headings = Array.from(document.querySelectorAll('#editor h1, #editor h2, #editor h3'));
+        const pos = sel.anchorNode.compareDocumentPosition;
+        // find previous heading
+        const all = headings.filter(h => h.compareDocumentPosition(sel.anchorNode) & Node.DOCUMENT_POSITION_FOLLOWING);
+        heading = all.length ? all.pop() : headings[0];
+      }
+      document.querySelectorAll('#outline li').forEach(li => {
+        li.classList.toggle('active', li.dataset.target === heading.id);
+      });
+    }
+    document.addEventListener('selectionchange', updateActiveOutline);
     generateOutline();
   </script>
 </body>
