@@ -26,6 +26,7 @@
     <button onclick="format('underline')">下線</button>
     <button onclick="format('insertUnorderedList')">箇条書き</button>
     <button onclick="format('insertOrderedList')">番号付きリスト</button>
+    <input type="file" accept=".html" onchange="loadFile(event)">
     <button onclick="save()">保存</button>
   </div>
 
@@ -34,6 +35,8 @@
   </div>
 
   <script>
+    let currentFilename = "document.html";
+
     function format(command, value = null) {
       document.execCommand(command, false, value);
     }
@@ -44,8 +47,23 @@
       const blob = new Blob([html], { type: 'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'document.html';
+      a.download = currentFilename;
       a.click();
+    }
+
+    function loadFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      currentFilename = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const temp = document.createElement("div");
+        temp.innerHTML = e.target.result;
+        const body = temp.querySelector("body");
+        document.getElementById('editor').innerHTML = body ? body.innerHTML : e.target.result;
+      };
+      reader.readAsText(file);
     }
   </script>
 </body>
