@@ -7,127 +7,580 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#ffffff">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('Service Worker registered!'));
-    }
-  </script>
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 0; }
-    #toolbar { padding: 8px; background: #f0f0f0; border-bottom: 1px solid #ccc; }
-    #container { display: flex; height: calc(100vh - 50px); }
-    #sidebar { width: 200px; overflow-y: auto; background: #f9f9f9; border-right: 1px solid #ccc; padding: 10px; }
-    #editor { flex: 1; padding: 10px; overflow-y: auto; position: relative; }
-    #outline { list-style: none; padding: 0; margin: 0; }
-    #outline li { margin: 4px 0; }
-    #outline li.active > a { background: #ddd; }
-    #outline a { text-decoration: none; color: #007acc; display: block; padding: 2px 4px; border-radius: 4px; }
-    .resizable-container { display: block; resize: both; overflow: auto; max-width: 100%; margin: 1em 0; border: 1px dashed #ccc; position: relative; }
-    .resizable-container img { width: 100%; height: auto; display: block; }
+    /* --- リセット --- */
+    html, body {
+      margin: 0; padding: 0;
+    }
+    body {
+      font-family: sans-serif;
+    }
+    /* --- ヘッダー --- */
+    #toolbar {
+      padding: 8px;
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      position: sticky; top: 0; z-index: 1000;
+      display: flex; align-items: center; gap: 8px;
+    }
+    /* ヘッダーに残すボタン */
+    #toolbar button, #toolbar input[type=file] {
+      display: flex;
+      margin-right: 4px;
+    }
+    /* --- コンテナ --- */
+    #container {
+      display: flex;
+      height: calc(100vh - 50px);
+    }
+    /* --- サイドバー（アウトライン） --- */
+    #sidebar {
+      width: 200px;
+      max-width: 500px;
+      background: #f9f9f9;
+      border-right: 1px solid #ccc;
+      padding: 4px 8px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      position: relative;
+      transition: width 0.2s ease;
+    }
+    #sidebar.hidden {
+      width: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    #sidebar p{ font-size: small; color: #7d7d7d; }
+    #outline { list-style:none; padding:0; margin:0; }
+    #outline li { margin:0px 0; }
+    #outline li.active > a { background:#ddd; }
+    #outline .outline-item { text-decoration:none; color:#333333; display:block; padding:4px; border-radius:4px; cursor:pointer; transition: background-color 0.2s; }
+    #outline .outline-item:hover { background:#f0f0f0; }
+    #outline .outline-item.active { background:#e0e0e0;  font-weight:bold; }
+
+    #toggleSidebar {
+      position: static;
+      top: 0.5em;
+      leftt: 0.5em;
+      width: 1.5em;
+      height: 1.5em;
+      border: 1px solid #999;
+      border-radius: 0.25em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      visibility: visible !important;
+    }
+
+    #resizer {
+      width: 5px;
+      cursor: col-resize;
+      background-color: transparent;
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      z-index: 9;
+    }
+
+    /* --- エディタ領域 --- */
+    #editor {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      position: relative;
+    }
+    /* リサイズ用コンテナ */
+    .resizable-container {
+      display: block;
+      resize: both; overflow: auto;
+      max-width: 100%;
+      max-height: fit-content;
+      margin:1em 0;
+      border:1px dashed #ccc; position: relative;
+    }
+    .resizable-container img {
+      width:100%; height:auto; display:block;
+    }
+    /* --- 浮動ツールバー --- */
+    #float-toolbar {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      padding: 4px;
+      z-index: 1001;
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+    #float-toolbar button, #float-toolbar select {
+      background: none;
+      border: none;
+      padding: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      border-radius: 3px;
+    }
+    #float-toolbar button:hover, #float-toolbar select:hover {
+      background: #eee;
+    }
+    
+    /* カラーピッカー関連 */
+    .color-picker-container {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .color-picker {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px;
+      display: none;
+      z-index: 1002;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      min-width: 120px;
+    }
+    
+    .color-picker.show {
+      display: grid;
+    }
+    
+    .color-option {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    
+    .color-option:hover {
+      border-color: #999;
+      transform: scale(1.1);
+    }
+    
+    #textColorBtn {
+      color: #000;
+      font-weight: bold;
+      position: relative;
+    }
+    
+    #textColorBtn::after {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 2px;
+      background: currentColor;
+    }
   </style>
 </head>
 <body>
+
+  <!-- ヘッダー：ファイル選択・保存のみ -->
   <div id="toolbar">
-    <button onclick="format('bold')">太字</button>
-    <button onclick="format('italic')">斜体</button>
-    <button onclick="format('underline')">下線</button>
-    <button onclick="format('insertUnorderedList')">箇条書き</button>
-    <button onclick="format('insertOrderedList')">番号付きリスト</button>
-    <input type="file" accept=".html" onchange="loadFile(event)">
-    <button onclick="save()">保存</button>
+    <div id="toggleSidebar" title="折りたたみ">«</div>
+    <input type="file" accept=".html" onchange="loadFile(event)" title="読み込み">
+    <button onclick="save()">💾 保存</button>
   </div>
+
   <div id="container">
+    <!-- アウトライン -->
     <div id="sidebar">
-      <h3>アウトライン</h3>
+      <div id="resizer"></div>
+      <P>アウトライン</P>
       <ul id="outline"></ul>
-      <button onclick="generateOutline()">再読込</button>
     </div>
-    <div id="editor" contenteditable="true" ondrop="handleDrop(event)" ondragover="event.preventDefault()">
+
+
+    <!-- 編集領域 -->
+    <div id="editor" contenteditable="true"
+         ondrop="handleDrop(event)" ondragover="e=>e.preventDefault()">
       <h1>ここに文章を入力してください...</h1>
     </div>
   </div>
+
+  <!-- 選択範囲浮動ツールバー -->
+  <div id="float-toolbar">
+    <button onclick="exec('bold')" title="太字">B</button>
+    <button onclick="exec('italic')" title="斜体">I</button>
+    <button onclick="exec('underline')" title="下線">U</button>
+    <button onclick="exec('insertUnorderedList')" title="箇条書き">• List</button>
+    <button onclick="exec('insertOrderedList')" title="番号付きリスト">1. List</button>
+    <select onchange="exec('formatBlock', this.value)" title="見出し/段落">
+      <option value="P">テキスト</option>
+      <option value="H1">見出し1</option>
+      <option value="H2">見出し2</option>
+      <option value="H3">見出し3</option>
+      <option value="H4">見出し4</option>
+    </select>
+    <div class="color-picker-container">
+      <button onclick="toggleColorPicker('text')" title="文字色" id="textColorBtn">A</button>
+      <div id="textColorPicker" class="color-picker">
+        <div class="color-option" style="background-color: #000000" onclick="setTextColor('#000000')" title="黒"></div>
+        <div class="color-option" style="background-color: #ff0000" onclick="setTextColor('#ff0000')" title="赤"></div>
+        <div class="color-option" style="background-color: #00ff00" onclick="setTextColor('#00ff00')" title="緑"></div>
+        <div class="color-option" style="background-color: #0000ff" onclick="setTextColor('#0000ff')" title="青"></div>
+        <div class="color-option" style="background-color: #ffff00" onclick="setTextColor('#ffff00')" title="黄"></div>
+        <div class="color-option" style="background-color: #ff00ff" onclick="setTextColor('#ff00ff')" title="マゼンタ"></div>
+        <div class="color-option" style="background-color: #00ffff" onclick="setTextColor('#00ffff')" title="シアン"></div>
+        <div class="color-option" style="background-color: #800080" onclick="setTextColor('#800080')" title="紫"></div>
+        <div class="color-option" style="background-color: #ffa500" onclick="setTextColor('#ffa500')" title="オレンジ"></div>
+        <div class="color-option" style="background-color: #808080" onclick="setTextColor('#808080')" title="グレー"></div>
+      </div>
+    </div>
+    <div class="color-picker-container">
+      <button onclick="toggleColorPicker('highlight')" title="ハイライト" id="highlightBtn">🖍</button>
+      <div id="highlightColorPicker" class="color-picker">
+        <div class="color-option" style="background-color: transparent; border: 1px solid #ccc" onclick="setHighlightColor('transparent')" title="なし">×</div>
+        <div class="color-option" style="background-color: #ffff00" onclick="setHighlightColor('#ffff00')" title="黄"></div>
+        <div class="color-option" style="background-color: #00ff00" onclick="setHighlightColor('#00ff00')" title="緑"></div>
+        <div class="color-option" style="background-color: #00ffff" onclick="setHighlightColor('#00ffff')" title="シアン"></div>
+        <div class="color-option" style="background-color: #ff00ff" onclick="setHighlightColor('#ff00ff')" title="マゼンタ"></div>
+        <div class="color-option" style="background-color: #ffa500" onclick="setHighlightColor('#ffa500')" title="オレンジ"></div>
+        <div class="color-option" style="background-color: #ff69b4" onclick="setHighlightColor('#ff69b4')" title="ピンク"></div>
+        <div class="color-option" style="background-color: #90ee90" onclick="setHighlightColor('#90ee90')" title="ライトグリーン"></div>
+        <div class="color-option" style="background-color: #ffb6c1" onclick="setHighlightColor('#ffb6c1')" title="ライトピンク"></div>
+        <div class="color-option" style="background-color: #d3d3d3" onclick="setHighlightColor('#d3d3d3')" title="ライトグレー"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    let currentFilename = "document.html";
-    function format(command, value = null) { document.execCommand(command, false, value); }
-    function save() {
-      const content = document.getElementById('editor').innerHTML;
-      const html = `<!DOCTYPE html><html><body>${content}</body></html>`;
-      const blob = new Blob([html], { type: 'text/html' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = currentFilename; a.click();
-    }
-    function loadFile(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      currentFilename = file.name;
-      const reader = new FileReader();
-      reader.onload = e => {
-        const temp = document.createElement("div"); temp.innerHTML = e.target.result;
-        const body = temp.querySelector("body");
-        document.getElementById('editor').innerHTML = body ? body.innerHTML : e.target.result;
-        generateOutline();
+  // PWA ServiceWorker 登録
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+  }
+
+  let currentFilename = 'document.html';
+  const editor = document.getElementById('editor');
+  const floatBar = document.getElementById('float-toolbar');
+
+  // アウトライン更新関数をグローバルスコープに定義
+  function updateOutline() {
+    const outline = document.getElementById('outline');
+    outline.innerHTML = '';
+
+    const headings = editor.querySelectorAll('h1, h2, h3, h4');
+    headings.forEach((h, idx) => {
+      const level = parseInt(h.tagName.substring(1));
+      const link = document.createElement('div');
+      link.textContent = h.textContent;
+      link.style.marginLeft = (level - 1) * 16 + 'px';
+      link.className = 'outline-item';
+      link.dataset.headingIndex = idx; // 見出しのインデックスを保存
+      link.onclick = () => {
+        // スクロールして見出しを中央に表示
+        h.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 見出しにカーソル（キャレット）を移動
+        const range = document.createRange();
+        range.selectNodeContents(h);
+        range.collapse(true);
+
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        // アウトラインをハイライト
+        updateOutlineHighlight();
       };
-      reader.readAsText(file);
-    }
-    function generateOutline() {
-      const outline = document.getElementById('outline');
-      outline.innerHTML = "";
-      const headings = document.querySelectorAll('#editor h1, #editor h2, #editor h3');
-      headings.forEach((h, i) => {
-        if (!h.id) h.id = 'heading-' + i;
-        const li = document.createElement('li');
-        const level = parseInt(h.tagName.substring(1));
-        li.style.paddingLeft = (level - 1) * 10 + 'px';
-        li.dataset.target = h.id;
-        li.innerHTML = `<a href="#${h.id}">${h.innerText}</a>`;
-        outline.appendChild(li);
-      });
-      updateActiveOutline();
-    }
-    function handleDrop(event) {
-      event.preventDefault();
-      const files = event.dataTransfer.files;
-      for (const file of files) {
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = e => {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'resizable-container';
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            wrapper.appendChild(img);
-            insertNodeAtCursor(wrapper);
-          };
-          reader.readAsDataURL(file);
+      outline.appendChild(link);
+    });
+    
+    // 現在のカーソル位置に基づいてハイライトを更新
+    updateOutlineHighlight();
+  }
+
+  // アウトラインのハイライトを更新する関数
+  function updateOutlineHighlight() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    const currentElement = range.startContainer.nodeType === Node.TEXT_NODE 
+      ? range.startContainer.parentElement 
+      : range.startContainer;
+
+    // 現在の要素から最も近い見出しを見つける
+    let targetHeading = findCurrentOrPreviousHeading(currentElement);
+    
+    // 全てのアウトライン項目からactiveクラスを削除
+    const outlineItems = document.querySelectorAll('.outline-item');
+    outlineItems.forEach(item => item.classList.remove('active'));
+
+    // 対象の見出しがある場合、対応するアウトライン項目をハイライト
+    if (targetHeading) {
+      const headings = editor.querySelectorAll('h1, h2, h3, h4');
+      const headingIndex = Array.from(headings).indexOf(targetHeading);
+      if (headingIndex >= 0) {
+        const targetOutlineItem = document.querySelector(`[data-heading-index="${headingIndex}"]`);
+        if (targetOutlineItem) {
+          targetOutlineItem.classList.add('active');
         }
       }
-      generateOutline();
     }
-    function insertNodeAtCursor(node) {
-      const sel = window.getSelection();
-      if (!sel.rangeCount) return;
-      const range = sel.getRangeAt(0);
-      range.deleteContents(); range.insertNode(node); range.collapse(false);
-      sel.removeAllRanges(); sel.addRange(range);
+  }
+
+  // 現在の要素または手前の見出しを見つける関数
+  function findCurrentOrPreviousHeading(element) {
+    // 現在の要素が見出しの場合はそれを返す
+    if (element && element.matches && element.matches('h1, h2, h3, h4')) {
+      return element;
     }
-    function updateActiveOutline() {
-      const sel = window.getSelection();
-      if (!sel.anchorNode) return;
-      let node = sel.anchorNode.nodeType === 1 ? sel.anchorNode : sel.anchorNode.parentElement;
-      let heading = node.closest('h1,h2,h3');
-      if (!heading) {
-        const headings = Array.from(document.querySelectorAll('#editor h1, #editor h2, #editor h3'));
-        const pos = sel.anchorNode.compareDocumentPosition;
-        // find previous heading
-        const all = headings.filter(h => h.compareDocumentPosition(sel.anchorNode) & Node.DOCUMENT_POSITION_FOLLOWING);
-        heading = all.length ? all.pop() : headings[0];
+
+    // エディタ内の全ての要素を取得
+    const allElements = Array.from(editor.querySelectorAll('*'));
+    const currentIndex = allElements.indexOf(element);
+
+    // 現在の要素から前方に向かって見出しを探す
+    for (let i = currentIndex; i >= 0; i--) {
+      const el = allElements[i];
+      if (el.matches('h1, h2, h3, h4')) {
+        return el;
       }
-      document.querySelectorAll('#outline li').forEach(li => {
-        li.classList.toggle('active', li.dataset.target === heading.id);
-      });
     }
-    document.addEventListener('selectionchange', updateActiveOutline);
-    generateOutline();
+
+    // 現在の要素の親要素から前方の兄弟要素を探す
+    let current = element;
+    while (current && current !== editor) {
+      let prev = current.previousElementSibling;
+      while (prev) {
+        if (prev.matches('h1, h2, h3, h4')) {
+          return prev;
+        }
+        // 前の要素の子要素内の見出しも確認
+        const headingInPrev = prev.querySelector('h1, h2, h3, h4:last-of-type');
+        if (headingInPrev) {
+          return headingInPrev;
+        }
+        prev = prev.previousElementSibling;
+      }
+      current = current.parentElement;
+    }
+
+    return null;
+  }
+
+  // 標準コマンド実行
+  function exec(cmd, val=null){
+    document.execCommand(cmd, false, val);
+    editor.focus();
+    hideFloatBar();
+  }
+
+  // カラーピッカーの表示/非表示
+  function toggleColorPicker(type) {
+    const pickerId = type === 'text' ? 'textColorPicker' : 'highlightColorPicker';
+    const picker = document.getElementById(pickerId);
+    const otherPicker = document.getElementById(type === 'text' ? 'highlightColorPicker' : 'textColorPicker');
+    
+    // 他のピッカーを閉じる
+    otherPicker.classList.remove('show');
+    
+    // 現在のピッカーをトグル
+    picker.classList.toggle('show');
+  }
+
+  // 文字色を設定
+  function setTextColor(color) {
+    document.execCommand('foreColor', false, color);
+    
+    // ボタンの色を更新
+    const btn = document.getElementById('textColorBtn');
+    btn.style.color = color;
+    
+    // ピッカーを閉じる
+    document.getElementById('textColorPicker').classList.remove('show');
+    editor.focus();
+  }
+
+  // ハイライト色を設定
+  function setHighlightColor(color) {
+    if (color === 'transparent') {
+      // ハイライトを削除
+      document.execCommand('hiliteColor', false, 'transparent');
+      document.execCommand('backColor', false, 'transparent');
+    } else {
+      // ハイライト色を設定
+      document.execCommand('hiliteColor', false, color);
+      // Firefoxなど一部ブラウザ用の代替
+      if (!document.queryCommandSupported('hiliteColor')) {
+        document.execCommand('backColor', false, color);
+      }
+    }
+    
+    // ピッカーを閉じる
+    document.getElementById('highlightColorPicker').classList.remove('show');
+    editor.focus();
+  }
+
+  // 保存
+  function save(){
+    const content = editor.innerHTML;
+    const html = `<!DOCTYPE html><html><body>${content}</body></html>`;
+    const blob = new Blob([html], {type:'text/html'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = currentFilename;
+    a.click();
+  }
+
+  // 読み込み
+  function loadFile(e){
+    const f = e.target.files[0];
+    if(!f) return;
+    currentFilename = f.name;
+    const r = new FileReader();
+    r.onload = ev => {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = ev.target.result;
+      const b = tmp.querySelector('body');
+      editor.innerHTML = b ? b.innerHTML : tmp.innerHTML;
+      // ファイル読み込み後にアウトラインを更新
+      updateOutline();
+    };
+    r.readAsText(f);
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+  }
+
+  // PWA ServiceWorker 登録（重複削除）
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // アウトラインを自動更新
+    editor.addEventListener('input', updateOutline);
+    editor.addEventListener('keydown', updateOutline);
+    editor.addEventListener('mouseup', updateOutline);
+
+    // カーソル位置変更時のハイライト更新
+    editor.addEventListener('keyup', updateOutlineHighlight);
+    editor.addEventListener('click', updateOutlineHighlight);
+    document.addEventListener('selectionchange', () => {
+      // selection変更がエディタ内で発生した場合のみ処理
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const container = range.commonAncestorContainer;
+        if (editor.contains(container) || container === editor) {
+          updateOutlineHighlight();
+        }
+      }
+    });
+
+    // サイドバーの折りたたみ
+    const sidebar = document.getElementById('sidebar');
+    const toggleSidebarBtn = document.getElementById('toggleSidebar');
+    toggleSidebarBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('hidden');
+      toggleSidebarBtn.innerText = sidebar.classList.contains('hidden') ? '☰' : '«';
+    });
+
+    // サイドバー幅のリサイズ
+    const resizer = document.getElementById('resizer');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      document.body.style.cursor = 'col-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      const newWidth = e.clientX;
+      sidebar.style.width = `${Math.max(100, Math.min(500, newWidth))}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+      isResizing = false;
+      document.body.style.cursor = 'default';
+    });
+
+    // 初期化
+    updateOutline();
+  });
+
+  // 画像ドロップ／挿入
+  function handleDrop(e){
+    e.preventDefault();
+    Array.from(e.dataTransfer.files).forEach(file=>{
+      if(file.type.startsWith('image/')){
+        const reader = new FileReader();
+        reader.onload=ev=>{
+          const wrap = document.createElement('div');
+          wrap.className='resizable-container';
+          const img = document.createElement('img');
+          img.src = ev.target.result;
+          wrap.appendChild(img);
+          insertAtCursor(wrap);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    updateOutline();
+  }
+
+  // カーソル位置にノード挿入
+  function insertAtCursor(node){
+    const sel = window.getSelection();
+    if(!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(node);
+  }
+
+  // 選択範囲時に浮動メニュー表示
+  document.addEventListener('mouseup', e=>{
+    setTimeout(()=>{ // 選択反映待ち
+      const sel = window.getSelection();
+      if(sel.isCollapsed) { hideFloatBar(); return; }
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      // 表示位置：選択範囲の上センター
+      floatBar.style.position = "absolute";
+      floatBar.style.top = (window.scrollY + rect.top - floatBar.offsetHeight - 48)+'px';
+      floatBar.style.left = (window.scrollX + rect.left)+'px';
+      floatBar.style.display = 'flex';
+    }, 10);
+  });
+
+  // 非表示
+  function hideFloatBar(){
+    floatBar.style.display = 'none';
+    // カラーピッカーも閉じる
+    document.getElementById('textColorPicker').classList.remove('show');
+    document.getElementById('highlightColorPicker').classList.remove('show');
+  }
+
+  // クリック時に消す（選択外）
+  document.addEventListener('mousedown', e=>{
+    if(!floatBar.contains(e.target)) {
+      hideFloatBar();
+    }
+  });
+
   </script>
+
 </body>
 </html>
