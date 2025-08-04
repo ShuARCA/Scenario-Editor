@@ -5,7 +5,7 @@
   <title>リッチテキストエディタ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="theme-color" content="#fffff9">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
   <style>
     /* --- リセット --- */
@@ -18,7 +18,7 @@
     /* --- ヘッダー --- */
     #toolbar {
       padding: 8px;
-      background: #f0f0f0;
+      background: #f7f6f5;
       border-bottom: 1px solid #ccc;
       position: sticky; top: 0; z-index: 1000;
       display: flex; align-items: center; gap: 8px;
@@ -50,11 +50,11 @@
       padding: 0;
       overflow: hidden;
     }
-    #sidebar p{ font-size: small; color: #7d7d7d; }
+    #sidebar p{ font-size: 12px; color: #7d7d7d; }
     #outline { list-style:none; padding:0; margin:0; }
     #outline li { margin:0px 0; }
     #outline li.active > a { background:#ddd; }
-    #outline .outline-item { text-decoration:none; color:#333333; display:block; padding:4px; border-radius:4px; cursor:pointer; transition: background-color 0.2s; }
+    #outline .outline-item { text-decoration:none; font-size: 14px; color:#333333; display:block; padding:3px; border-radius:6px; cursor:pointer; margin: 2px 0px;}
     #outline .outline-item:hover { background:#f0f0f0; }
     #outline .outline-item.active { background:#e0e0e0;  font-weight:bold; }
 
@@ -91,6 +91,7 @@
       padding: 10px;
       overflow-y: auto;
       position: relative;
+      background-color: #fffff9;
     }
     /* リサイズ用コンテナ */
     .resizable-container {
@@ -197,7 +198,8 @@
   <div id="toolbar">
     <div id="toggleSidebar" title="折りたたみ">«</div>
     <input type="file" accept=".html" onchange="loadFile(event)" title="読み込み">
-    <button onclick="save()">💾 保存</button>
+    <button onclick="saveAs()" title="名前を付けて保存 (Ctrl+S)">💾 名前を付けて保存</button>
+    <span id="lastModified" style="margin-left: auto; font-size: 12px; color: #666;"></span>
   </div>
 
   <div id="container">
@@ -207,7 +209,6 @@
       <P>アウトライン</P>
       <ul id="outline"></ul>
     </div>
-
 
     <!-- 編集領域 -->
     <div id="editor" contenteditable="true"
@@ -221,8 +222,8 @@
     <button onclick="exec('bold')" title="太字">B</button>
     <button onclick="exec('italic')" title="斜体">I</button>
     <button onclick="exec('underline')" title="下線">U</button>
-    <button onclick="exec('insertUnorderedList')" title="箇条書き">• List</button>
-    <button onclick="exec('insertOrderedList')" title="番号付きリスト">1. List</button>
+    <button onclick="exec('insertUnorderedList')" title="箇条書き">⋮≡</button>
+    <button onclick="exec('insertOrderedList')" title="番号付きリスト">¹₂＝</button>
     <select onchange="exec('formatBlock', this.value)" title="見出し/段落">
       <option value="P">テキスト</option>
       <option value="H1">見出し1</option>
@@ -233,31 +234,31 @@
     <div class="color-picker-container">
       <button onclick="toggleColorPicker('text')" title="文字色" id="textColorBtn">A</button>
       <div id="textColorPicker" class="color-picker">
-        <div class="color-option" style="background-color: #000000" onclick="setTextColor('#000000')" title="黒"></div>
-        <div class="color-option" style="background-color: #ff0000" onclick="setTextColor('#ff0000')" title="赤"></div>
-        <div class="color-option" style="background-color: #00ff00" onclick="setTextColor('#00ff00')" title="緑"></div>
-        <div class="color-option" style="background-color: #0000ff" onclick="setTextColor('#0000ff')" title="青"></div>
-        <div class="color-option" style="background-color: #ffff00" onclick="setTextColor('#ffff00')" title="黄"></div>
-        <div class="color-option" style="background-color: #ff00ff" onclick="setTextColor('#ff00ff')" title="マゼンタ"></div>
-        <div class="color-option" style="background-color: #00ffff" onclick="setTextColor('#00ffff')" title="シアン"></div>
-        <div class="color-option" style="background-color: #800080" onclick="setTextColor('#800080')" title="紫"></div>
-        <div class="color-option" style="background-color: #ffa500" onclick="setTextColor('#ffa500')" title="オレンジ"></div>
-        <div class="color-option" style="background-color: #808080" onclick="setTextColor('#808080')" title="グレー"></div>
+        <div class="color-option" style="background-color: #24140e" onclick="setTextColor('#24140e')" title="ランプブラック"></div>
+        <div class="color-option" style="background-color: #abb1b5" onclick="setTextColor('#abb1b5')" title="フォッグ"></div>
+        <div class="color-option" style="background-color: #946c45" onclick="setTextColor('#946c45')" title="カフェオレ"></div>
+        <div class="color-option" style="background-color: #f39800" onclick="setTextColor('#f39800')" title="マリーゴールド"></div>
+        <div class="color-option" style="background-color: #e9bc00" onclick="setTextColor('#e9bc00')" title="トパーズ"></div>
+        <div class="color-option" style="background-color: #578a3d" onclick="setTextColor('#578a3d')" title="アイビーグリーン"></div>
+        <div class="color-option" style="background-color: #0068b7" onclick="setTextColor('#0068b7')" title="コバルトブルー"></div>
+        <div class="color-option" style="background-color: #5a4498" onclick="setTextColor('#5a4498')" title="バイオレット"></div>
+        <div class="color-option" style="background-color: #dc6b9a" onclick="setTextColor('#dc6b9a')" title="コスモス"></div>
+        <div class="color-option" style="background-color: #ea5550" onclick="setTextColor('#ea5550')" title="ポピーレッド"></div>
       </div>
     </div>
     <div class="color-picker-container">
       <button onclick="toggleColorPicker('highlight')" title="ハイライト" id="highlightBtn">🖍</button>
       <div id="highlightColorPicker" class="color-picker">
-        <div class="color-option" style="background-color: transparent; border: 1px solid #ccc" onclick="setHighlightColor('transparent')" title="なし">×</div>
-        <div class="color-option" style="background-color: #ffff00" onclick="setHighlightColor('#ffff00')" title="黄"></div>
-        <div class="color-option" style="background-color: #00ff00" onclick="setHighlightColor('#00ff00')" title="緑"></div>
-        <div class="color-option" style="background-color: #00ffff" onclick="setHighlightColor('#00ffff')" title="シアン"></div>
-        <div class="color-option" style="background-color: #ff00ff" onclick="setHighlightColor('#ff00ff')" title="マゼンタ"></div>
-        <div class="color-option" style="background-color: #ffa500" onclick="setHighlightColor('#ffa500')" title="オレンジ"></div>
-        <div class="color-option" style="background-color: #ff69b4" onclick="setHighlightColor('#ff69b4')" title="ピンク"></div>
-        <div class="color-option" style="background-color: #90ee90" onclick="setHighlightColor('#90ee90')" title="ライトグリーン"></div>
-        <div class="color-option" style="background-color: #ffb6c1" onclick="setHighlightColor('#ffb6c1')" title="ライトピンク"></div>
-        <div class="color-option" style="background-color: #d3d3d3" onclick="setHighlightColor('#d3d3d3')" title="ライトグレー"></div>
+        <div class="color-option" style="background-color: transparent; border: 1px solid #ccc" onclick="setHighlightColor('transparent')" title="クリア">×</div>
+        <div class="color-option" style="background-color: #efefef" onclick="setHighlightColor('#efefef')" title="シルバーホワイト"></div>
+        <div class="color-option" style="background-color: #f6e5cc" onclick="setHighlightColor('#f6e5cc')" title="エクルベージュ"></div>
+        <div class="color-option" style="background-color: #fbd8b5" onclick="setHighlightColor('#fbd8b5')" title="ピーチ"></div>
+        <div class="color-option" style="background-color: #fff3b8" onclick="setHighlightColor('#fff3b8')" title="クリームイエロー"></div>
+        <div class="color-option" style="background-color: #f0f6da" onclick="setHighlightColor('#f0f6da')" title="ホワイトリリー"></div>
+        <div class="color-option" style="background-color: #bbdbf3" onclick="setHighlightColor('#bbdbf3')" title="フロスティブルー"></div>
+        <div class="color-option" style="background-color: #d1bada" onclick="setHighlightColor('#d1bada')" title="ライラック"></div>
+        <div class="color-option" style="background-color: #e5c1cd" onclick="setHighlightColor('#e5c1cd')" title="ローズドラジェ"></div>
+        <div class="color-option" style="background-color: #fbdac8" onclick="setHighlightColor('#fbdac8')" title="シェルピンク"></div>
       </div>
     </div>
   </div>
@@ -269,8 +270,13 @@
   }
 
   let currentFilename = 'document.html';
+  let lastModified = new Date(); // 最終更新日時
   const editor = document.getElementById('editor');
   const floatBar = document.getElementById('float-toolbar');
+  
+  // 選択範囲を保存するための変数（改善版）
+  let savedSelection = null;
+  let savedSelectionData = null;
 
   // アウトライン更新関数をグローバルスコープに定義
   function updateOutline() {
@@ -378,6 +384,53 @@
     return null;
   }
 
+  // 選択範囲を保存する関数（改善版）
+  function saveSelection() {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      savedSelection = range.cloneRange();
+      
+      // 追加の選択情報を保存
+      savedSelectionData = {
+        startContainer: range.startContainer,
+        startOffset: range.startOffset,
+        endContainer: range.endContainer,
+        endOffset: range.endOffset,
+        collapsed: range.collapsed
+      };
+    }
+  }
+
+  // 保存した選択範囲を復元する関数（改善版）
+  function restoreSelection() {
+    if (savedSelection) {
+      try {
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedSelection);
+        return true;
+      } catch (e) {
+        // Rangeが無効になった場合の代替処理
+        if (savedSelectionData) {
+          try {
+            const range = document.createRange();
+            range.setStart(savedSelectionData.startContainer, savedSelectionData.startOffset);
+            range.setEnd(savedSelectionData.endContainer, savedSelectionData.endOffset);
+            
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            return true;
+          } catch (e2) {
+            return false;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   // 標準コマンド実行
   function exec(cmd, val=null){
     document.execCommand(cmd, false, val);
@@ -385,8 +438,11 @@
     hideFloatBar();
   }
 
-  // カラーピッカーの表示/非表示
+  // カラーピッカーの表示/非表示（改善版）
   function toggleColorPicker(type) {
+    // 選択範囲を保存
+    saveSelection();
+    
     const pickerId = type === 'text' ? 'textColorPicker' : 'highlightColorPicker';
     const picker = document.getElementById(pickerId);
     const otherPicker = document.getElementById(type === 'text' ? 'highlightColorPicker' : 'textColorPicker');
@@ -396,65 +452,228 @@
     
     // 現在のピッカーをトグル
     picker.classList.toggle('show');
+    
+    // ピッカーが開いた場合は、マウスイベントを防ぐ
+    if (picker.classList.contains('show')) {
+      picker.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+      });
+    }
   }
 
-  // 文字色を設定
+  // 文字色を設定（改善版）
   function setTextColor(color) {
-    document.execCommand('foreColor', false, color);
+    // 選択範囲を復元
+    if (restoreSelection()) {
+      // 即座にコマンドを実行
+      const success = document.execCommand('foreColor', false, color);
+      
+      // 代替方法（一部のブラウザで必要）
+      if (!success) {
+        try {
+          const selection = window.getSelection();
+          if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            if (!range.collapsed) {
+              const span = document.createElement('span');
+              span.style.color = color;
+              try {
+                range.surroundContents(span);
+              } catch (e) {
+                // 複雑な選択範囲の場合
+                const contents = range.extractContents();
+                span.appendChild(contents);
+                range.insertNode(span);
+              }
+            }
+          }
+        } catch (e) {
+        }
+      }
+    }
     
     // ボタンの色を更新
-    const btn = document.getElementById('textColorBtn');
-    btn.style.color = color;
+    document.getElementById('textColorBtn').style.color = color;
     
     // ピッカーを閉じる
     document.getElementById('textColorPicker').classList.remove('show');
+    
+    // エディタにフォーカスを戻す
     editor.focus();
+    
+    // 最終更新日時を更新
+    updateLastModified();
   }
 
-  // ハイライト色を設定
+  // ハイライト色を設定（改善版）
   function setHighlightColor(color) {
-    if (color === 'transparent') {
-      // ハイライトを削除
-      document.execCommand('hiliteColor', false, 'transparent');
-      document.execCommand('backColor', false, 'transparent');
-    } else {
-      // ハイライト色を設定
-      document.execCommand('hiliteColor', false, color);
-      // Firefoxなど一部ブラウザ用の代替
-      if (!document.queryCommandSupported('hiliteColor')) {
-        document.execCommand('backColor', false, color);
+    // 選択範囲を復元
+    if (restoreSelection()) {
+      if (color === 'transparent') {
+        // ハイライトを削除
+        document.execCommand('hiliteColor', false, 'transparent');
+        document.execCommand('backColor', false, 'transparent');
+      } else {
+        // ハイライト色を設定
+        let success = document.execCommand('hiliteColor', false, color);
+        
+        // Firefoxなど一部ブラウザ用の代替
+        if (!success || !document.queryCommandSupported('hiliteColor')) {
+          success = document.execCommand('backColor', false, color);
+        }
+        
+        // 代替方法
+        if (!success) {
+          try {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const range = selection.getRangeAt(0);
+              if (!range.collapsed) {
+                const span = document.createElement('span');
+                span.style.backgroundColor = color;
+                try {
+                  range.surroundContents(span);
+                } catch (e) {
+                  // 複雑な選択範囲の場合
+                  const contents = range.extractContents();
+                  span.appendChild(contents);
+                  range.insertNode(span);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('ハイライト色の設定に失敗しました:', e);
+          }
+        }
       }
     }
     
     // ピッカーを閉じる
     document.getElementById('highlightColorPicker').classList.remove('show');
+    
+    // エディタにフォーカスを戻す
     editor.focus();
+    
+    // 最終更新日時を更新
+    updateLastModified();
   }
 
-  // 保存
-  function save(){
+  // File System Access API がサポートされているかチェック
+  function isFileSystemAccessSupported() {
+    return 'showSaveFilePicker' in window;
+  }
+
+  // 最終更新日時を更新して表示
+  function updateLastModified() {
+    lastModified = new Date();
+    displayLastModified();
+  }
+
+  // 最終更新日時を表示
+  function displayLastModified() {
+    const lastModifiedElement = document.getElementById('lastModified');
+    const formatted = lastModified.toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    lastModifiedElement.textContent = `最終更新: ${formatted}`;
+  }
+
+  // 名前を付けて保存
+  async function saveAs() {
     const content = editor.innerHTML;
-    const html = `<!DOCTYPE html><html><body>${content}</body></html>`;
-    const blob = new Blob([html], {type:'text/html'});
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Document</title></head><body>${content}</body></html>`;
+
+    if (isFileSystemAccessSupported()) {
+      try {
+        // File System Access API を使用してファイル選択ダイアログを表示
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: currentFilename,
+          types: [{
+            description: 'HTML files',
+            accept: {'text/html': ['.html']},
+          }],
+        });
+
+        const writable = await fileHandle.createWritable();
+        await writable.write(html);
+        await writable.close();
+
+        // 保存されたファイルの情報を更新
+        currentFilename = fileHandle.name;
+        
+        // 成功通知（オプション）
+        showNotification(`${fileHandle.name} として保存しました`);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          // エラー時は従来の方法にフォールバック
+          downloadFile(html, currentFilename);
+        }
+      }
+    } else {
+      // File System Access API が使用できない場合は従来の方法
+      downloadFile(html, currentFilename);
+    }
+  }
+
+  // 従来のダウンロード方式
+  function downloadFile(content, filename) {
+    const blob = new Blob([content], {type:'text/html'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = currentFilename;
+    a.download = filename;
     a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // 通知表示（オプション）
+  function showNotification(message) {
+    // 簡単な通知を表示
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 10000;
+      font-size: 14px;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
   }
 
   // 読み込み
-  function loadFile(e){
+  async function loadFile(e) {
     const f = e.target.files[0];
-    if(!f) return;
+    if (!f) return;
+    
     currentFilename = f.name;
+    
     const r = new FileReader();
     r.onload = ev => {
       const tmp = document.createElement('div');
       tmp.innerHTML = ev.target.result;
       const b = tmp.querySelector('body');
       editor.innerHTML = b ? b.innerHTML : tmp.innerHTML;
+      
+      // ファイルの最終更新日時を設定
+      lastModified = new Date(f.lastModified);
+      displayLastModified();
+      
       // ファイル読み込み後にアウトラインを更新
       updateOutline();
+      showNotification(`${f.name} を読み込みました`);
     };
     r.readAsText(f);
     document.body.style.margin = '0';
@@ -469,10 +688,26 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Ctrl+S キーボードショートカットの追加
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveAs();
+      }
+    });
+
+    // エディタの内容が変更されたときに最終更新日時を更新
+    editor.addEventListener('input', () => {
+      updateLastModified();
+      updateOutline();
+    });
+
     // アウトラインを自動更新
-    editor.addEventListener('input', updateOutline);
     editor.addEventListener('keydown', updateOutline);
     editor.addEventListener('mouseup', updateOutline);
+
+    // 初期表示時に最終更新日時を表示
+    displayLastModified();
 
     // カーソル位置変更時のハイライト更新
     editor.addEventListener('keyup', updateOutlineHighlight);
@@ -492,9 +727,24 @@
     // サイドバーの折りたたみ
     const sidebar = document.getElementById('sidebar');
     const toggleSidebarBtn = document.getElementById('toggleSidebar');
+    let sidebarWidth = 200; // デフォルト幅を保存
+    
     toggleSidebarBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('hidden');
-      toggleSidebarBtn.innerText = sidebar.classList.contains('hidden') ? '☰' : '«';
+      if (sidebar.classList.contains('hidden')) {
+        // 展開：保存された幅を復元
+        sidebar.classList.remove('hidden');
+        sidebar.style.width = sidebarWidth + 'px';
+        toggleSidebarBtn.innerText = '«';
+      } else {
+        // 折りたたみ：現在の幅を保存してから非表示
+        const currentWidth = sidebar.offsetWidth;
+        if (currentWidth > 0) {
+          sidebarWidth = currentWidth;
+        }
+        sidebar.classList.add('hidden');
+        sidebar.style.width = '0px';
+        toggleSidebarBtn.innerText = '☰';
+      }
     });
 
     // サイドバー幅のリサイズ
@@ -502,19 +752,28 @@
     let isResizing = false;
 
     resizer.addEventListener('mousedown', (e) => {
+      // 折りたたまれている場合はリサイズを無効化
+      if (sidebar.classList.contains('hidden')) {
+        return;
+      }
       isResizing = true;
       document.body.style.cursor = 'col-resize';
+      e.preventDefault();
     });
 
     document.addEventListener('mousemove', (e) => {
-      if (!isResizing) return;
-      const newWidth = e.clientX;
-      sidebar.style.width = `${Math.max(100, Math.min(500, newWidth))}px`;
+      if (!isResizing || sidebar.classList.contains('hidden')) return;
+      
+      const newWidth = Math.max(100, Math.min(500, e.clientX));
+      sidebar.style.width = `${newWidth}px`;
+      sidebarWidth = newWidth; // 幅を保存
     });
 
     document.addEventListener('mouseup', () => {
-      isResizing = false;
-      document.body.style.cursor = 'default';
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = 'default';
+      }
     });
 
     // 初期化
@@ -550,18 +809,76 @@
     range.insertNode(node);
   }
 
-  // 選択範囲時に浮動メニュー表示
+  // 選択範囲時に浮動メニュー表示（改善版）
   document.addEventListener('mouseup', e=>{
     setTimeout(()=>{ // 選択反映待ち
       const sel = window.getSelection();
-      if(sel.isCollapsed) { hideFloatBar(); return; }
+      
+      if(sel.isCollapsed) { 
+        hideFloatBar(); 
+        return; 
+      }
+      
+      // 選択範囲がエディタ内にあるかチェック
       const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      // 表示位置：選択範囲の上センター
-      floatBar.style.position = "absolute";
-      floatBar.style.top = (window.scrollY + rect.top - floatBar.offsetHeight - 48)+'px';
-      floatBar.style.left = (window.scrollX + rect.left)+'px';
+      const container = range.commonAncestorContainer;
+      
+      // テキストノードの場合は親要素をチェック
+      const containerElement = container.nodeType === Node.TEXT_NODE 
+        ? container.parentElement 
+        : container;
+      
+      // エディタ内の選択でない場合は非表示
+      if (!editor.contains(containerElement) && containerElement !== editor) {
+        hideFloatBar();
+        return;
+      }
+      
+      // 選択範囲を保存（浮動ツールバー表示時）
+      saveSelection();
+      
+      // まず表示してサイズを取得
       floatBar.style.display = 'flex';
+      floatBar.style.position = "absolute";
+      floatBar.style.visibility = 'hidden'; // サイズ計算のため一時的に非表示
+      
+      const rect = range.getBoundingClientRect();
+      const toolbarRect = floatBar.getBoundingClientRect();
+      
+      // 初期位置を設定（選択範囲の上中央）
+      let top = rect.top - toolbarRect.height - 8;
+      let left = rect.left + (rect.width / 2) - (toolbarRect.width / 2);
+      
+      // ビューポートの境界を取得
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      
+      // 左右の調整
+      if (left < 10) {
+        left = 10; // 左端から10px
+      } else if (left + toolbarRect.width > viewportWidth - 10) {
+        left = viewportWidth - toolbarRect.width - 10; // 右端から10px
+      }
+      
+      // 上下の調整
+      if (top < 10) {
+        // 上にはみ出る場合は選択範囲の下に表示
+        top = rect.bottom + 8;
+      }
+      
+      if (top + toolbarRect.height > viewportHeight - 10) {
+        // 下にはみ出る場合は再度上に調整
+        top = rect.top - toolbarRect.height - 8;
+        if (top < 10) {
+          // それでも上にはみ出る場合は選択範囲と重なっても表示
+          top = 10;
+        }
+      }
+      
+      // スクロール位置を考慮して最終位置を設定
+      floatBar.style.top = (top + window.scrollY) + 'px';
+      floatBar.style.left = (left + window.scrollX) + 'px';
+      floatBar.style.visibility = 'visible'; // 表示
     }, 10);
   });
 
@@ -576,6 +893,25 @@
   // クリック時に消す（選択外）
   document.addEventListener('mousedown', e=>{
     if(!floatBar.contains(e.target)) {
+      hideFloatBar();
+    }
+  });
+
+  // エディタ以外でのselectionchange時は浮動ツールバーを隠す
+  document.addEventListener('selectionchange', () => {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const container = range.commonAncestorContainer;
+      const containerElement = container.nodeType === Node.TEXT_NODE 
+        ? container.parentElement 
+        : container;
+      
+      // エディタ外の選択の場合は浮動ツールバーを非表示
+      if (!editor.contains(containerElement) && containerElement !== editor) {
+        hideFloatBar();
+      }
+    } else {
       hideFloatBar();
     }
   });
